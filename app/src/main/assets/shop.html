@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>shop</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+</head>
+<body>
+    <div>我是webview</div>
+    <div id="cs">测试JavascriptInterface</div>
+</body>
+<script>
+    let cid = 0;
+    let callbacks = {};
+    window.Bridge = {
+        // 获取用户的登录信息
+        getUserInfo(data = {}){
+            window.Bridge.callNative("getUserInfo", data)
+        },
+        // 获取网络情况
+        getNetInfo(data = {}){
+            window.Bridge.callNative("getNetInfo", data)
+        },
+        callNative: function(bridgeName, data) {
+            cid++;
+            if (data.onSuccess) {
+                callbacks[cid] = data.onSuccess;
+            }
+            nativeBridge.postMessage(JSON.stringify({
+                cid,
+                bridgeName: bridgeName,
+                data: data.params || {}
+            }));
+         },
+        receiveNative: function(msg) {
+            callbacks[msg.cid] && callbacks[msg.cid](msg);
+            if (msg.bridgeName != "getNetInfo") {
+                Reflect.deleteProperty(callbacks, msg.cid);
+            }
+        }
+    }
+    document.getElementById("cs").onclick = function(){
+        window.Bridge.getUserInfo({
+            params:{},
+            onSuccess(res){
+                alert(res.name)
+            }
+        })
+    }
+    
+</script>
+</html>
